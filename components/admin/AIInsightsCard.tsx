@@ -57,6 +57,7 @@ interface InsightsResponse {
   insights: Insights;
   rawMetrics: RawMetrics;
   generatedAt: string;
+  cached?: boolean;
   error?: string;
 }
 
@@ -176,7 +177,7 @@ export function AIInsightsCard() {
     return null;
   }
 
-  const { insights, rawMetrics, generatedAt } = data;
+  const { insights, rawMetrics, generatedAt, cached } = data;
 
   return (
     <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
@@ -196,6 +197,11 @@ export function AIInsightsCard() {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
+              {cached && (
+                <span className="ml-2 inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  Cached
+                </span>
+              )}
             </p>
           </div>
         </div>

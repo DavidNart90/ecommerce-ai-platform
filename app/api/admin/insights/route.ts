@@ -9,6 +9,10 @@ import {
   REVENUE_BY_PERIOD_QUERY,
 } from "@/sanity/queries/stats";
 
+// ============================================
+// Types
+// ============================================
+
 interface OrderItem {
   quantity: number;
   priceAtPurchase: number;
@@ -64,12 +68,103 @@ interface RevenuePeriod {
   previousOrderCount: number;
 }
 
+interface Insights {
+  salesTrends: {
+    summary: string;
+    highlights: string[];
+    trend: "up" | "down" | "stable";
+  };
+  inventory: {
+    summary: string;
+    alerts: string[];
+    recommendations: string[];
+  };
+  actionItems: {
+    urgent: string[];
+    recommended: string[];
+    opportunities: string[];
+  };
+}
+
+interface RawMetrics {
+  currentRevenue: number;
+  previousRevenue: number;
+  revenueChange: string;
+  orderCount: number;
+  avgOrderValue: string;
+  unfulfilledCount: number;
+  lowStockCount: number;
+}
+
+interface CachedResponse {
+  dataHash: string;
+  insights: Insights;
+  rawMetrics: RawMetrics;
+  generatedAt: string;
+  cachedAt: number; // timestamp for TTL check
+}
+
+// ============================================
+// Cache Configuration
+// ============================================
+
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour max cache age
+
+// In-memory cache (persists across requests until cold start/deploy)
+let insightsCache: CachedResponse | null = null;
+
+/**
+ * Generate a simple hash from an object for cache comparison
+ * Uses JSON stringification + basic string hashing
+ */
+function hashObject(obj: unknown): string {
+  const str = JSON.stringify(obj);
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return hash.toString(36);
+}
+
+/**
+ * Check if cache is valid (exists, hash matches, and not expired)
+ */
+function isCacheValid(currentHash: string): boolean {
+  if (!insightsCache) return false;
+
+  const now = Date.now();
+  const cacheAge = now - insightsCache.cachedAt;
+
+  // Cache is invalid if expired OR hash doesn't match
+  if (cacheAge > CACHE_TTL_MS) {
+    console.log("[Insights Cache] Cache expired (age: " + Math.round(cacheAge / 1000 / 60) + " min)");
+    return false;
+  }
+
+  if (insightsCache.dataHash !== currentHash) {
+    console.log("[Insights Cache] Data changed, cache invalidated");
+    return false;
+  }
+
+  console.log("[Insights Cache] Cache HIT (age: " + Math.round(cacheAge / 1000 / 60) + " min)");
+  return true;
+}
+
+// ============================================
+// API Route Handler
+// ============================================
+
 export async function GET() {
   try {
     // Calculate date ranges
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    // Use fresh client (bypass CDN) to get real-time data for admin insights
+    const freshClient = client.withConfig({ useCdn: false });
 
     // Fetch all analytics data in parallel
     const [
@@ -80,14 +175,14 @@ export async function GET() {
       unfulfilledOrders,
       revenuePeriod,
     ] = await Promise.all([
-      client.fetch<Order[]>(ORDERS_LAST_7_DAYS_QUERY, {
+      freshClient.fetch<Order[]>(ORDERS_LAST_7_DAYS_QUERY, {
         startDate: sevenDaysAgo.toISOString(),
       }),
-      client.fetch<StatusDistribution>(ORDER_STATUS_DISTRIBUTION_QUERY),
-      client.fetch<ProductSale[]>(TOP_SELLING_PRODUCTS_QUERY),
-      client.fetch<Product[]>(PRODUCTS_INVENTORY_QUERY),
-      client.fetch<UnfulfilledOrder[]>(UNFULFILLED_ORDERS_QUERY),
-      client.fetch<RevenuePeriod>(REVENUE_BY_PERIOD_QUERY, {
+      freshClient.fetch<StatusDistribution>(ORDER_STATUS_DISTRIBUTION_QUERY),
+      freshClient.fetch<ProductSale[]>(TOP_SELLING_PRODUCTS_QUERY),
+      freshClient.fetch<Product[]>(PRODUCTS_INVENTORY_QUERY),
+      freshClient.fetch<UnfulfilledOrder[]>(UNFULFILLED_ORDERS_QUERY),
+      freshClient.fetch<RevenuePeriod>(REVENUE_BY_PERIOD_QUERY, {
         currentStart: sevenDaysAgo.toISOString(),
         previousStart: fourteenDaysAgo.toISOString(),
       }),
@@ -166,7 +261,7 @@ export async function GET() {
           recentOrders.length
         : 0;
 
-    // Prepare data summary for AI
+    // Prepare data summary for AI (and for hashing)
     const dataSummary = {
       salesTrends: {
         currentWeekRevenue: currentRevenue,
@@ -182,6 +277,19 @@ export async function GET() {
         })),
       },
       inventory: {
+        outOfStock: productsInventory
+          .filter((p) => p.stock === 0)
+          .map((p) => ({
+            name: p.name,
+            category: p.category,
+          })),
+        lowStock: productsInventory
+          .filter((p) => p.stock > 0 && p.stock <= 5)
+          .map((p) => ({
+            name: p.name,
+            stock: p.stock,
+            category: p.category,
+          })),
         needsRestock: needsRestock.map((p) => ({
           name: p.name,
           stock: p.stock,
@@ -193,7 +301,8 @@ export async function GET() {
           category: p.category,
         })),
         totalProducts: productsInventory.length,
-        lowStockCount: productsInventory.filter((p) => p.stock <= 5).length,
+        outOfStockCount: productsInventory.filter((p) => p.stock === 0).length,
+        lowStockCount: productsInventory.filter((p) => p.stock > 0 && p.stock <= 5).length,
       },
       operations: {
         statusDistribution,
@@ -209,9 +318,40 @@ export async function GET() {
       },
     };
 
-    // Generate AI insights
+    // Calculate raw metrics (needed for response regardless of cache)
+    const rawMetrics: RawMetrics = {
+      currentRevenue,
+      previousRevenue,
+      revenueChange: revenueChange.toFixed(1),
+      orderCount: revenuePeriod.currentOrderCount || 0,
+      avgOrderValue: avgOrderValue.toFixed(2),
+      unfulfilledCount: unfulfilledOrders.length,
+      lowStockCount: productsInventory.filter((p) => p.stock <= 5).length,
+    };
+
+    // ============================================
+    // Cache Check - Return cached if valid
+    // ============================================
+    const dataHash = hashObject(dataSummary);
+
+    if (isCacheValid(dataHash)) {
+      // Return cached insights with fresh rawMetrics
+      return Response.json({
+        success: true,
+        insights: insightsCache!.insights,
+        rawMetrics, // Always return fresh metrics
+        generatedAt: insightsCache!.generatedAt,
+        cached: true, // Flag to indicate this was cached
+      });
+    }
+
+    // ============================================
+    // Generate AI Insights (cache miss)
+    // ============================================
+    console.log("[Insights Cache] Cache MISS - calling AI");
+
     const { text } = await generateText({
-      model: gateway("anthropic/claude-sonnet-4"),
+      model: gateway("anthropic/claude-3-5-haiku-latest"),
       system: `You are an expert e-commerce analytics assistant. Analyze the provided store data and generate actionable insights for the store admin.
 
 Your response must be valid JSON with this exact structure:
@@ -238,7 +378,12 @@ Guidelines:
 - Prioritize actionable insights
 - Keep highlights, alerts, and recommendations concise (under 100 characters each)
 - Focus on what the admin can do TODAY
-- Use £ for currency`,
+- Use £ for currency
+- IMPORTANT: When mentioning orders that need to be processed or shipped, ALWAYS include the order number, ALL ORDERS THAT NEEDS TO BE PROCESSED OR SHIPPED SHOULD BE LISTED IN THE URGENT ACTION ITEMS SECTION.
+- List specific order numbers in urgent action items so the admin can take immediate action
+- INVENTORY ALERTS: In the inventory.alerts array:
+  1. FIRST list ALL out-of-stock products (stock = 0) as URGENT with product name (e.g., "OUT OF STOCK: Modern Coffee Table")
+  2. THEN list up to 4 low-stock products (stock 1-5) as warnings with product name and stock count (e.g., "Low stock: Velvet Sofa (2 left)")`,
       prompt: `Analyze this e-commerce store data and provide insights:
 
 ${JSON.stringify(dataSummary, null, 2)}
@@ -247,23 +392,7 @@ Generate insights in the required JSON format.`,
     });
 
     // Parse AI response
-    let insights: {
-      salesTrends: {
-        summary: string;
-        highlights: string[];
-        trend: "up" | "down" | "stable";
-      };
-      inventory: {
-        summary: string;
-        alerts: string[];
-        recommendations: string[];
-      };
-      actionItems: {
-        urgent: string[];
-        recommended: string[];
-        opportunities: string[];
-      };
-    };
+    let insights: Insights;
     try {
       // Extract JSON from the response (in case there's extra text)
       const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -308,19 +437,26 @@ Generate insights in the required JSON format.`,
       };
     }
 
+    const generatedAt = new Date().toISOString();
+
+    // ============================================
+    // Update Cache
+    // ============================================
+    insightsCache = {
+      dataHash,
+      insights,
+      rawMetrics,
+      generatedAt,
+      cachedAt: Date.now(),
+    };
+    console.log("[Insights Cache] Cache updated with new insights");
+
     return Response.json({
       success: true,
       insights,
-      rawMetrics: {
-        currentRevenue,
-        previousRevenue,
-        revenueChange: revenueChange.toFixed(1),
-        orderCount: revenuePeriod.currentOrderCount || 0,
-        avgOrderValue: avgOrderValue.toFixed(2),
-        unfulfilledCount: unfulfilledOrders.length,
-        lowStockCount: productsInventory.filter((p) => p.stock <= 5).length,
-      },
-      generatedAt: new Date().toISOString(),
+      rawMetrics,
+      generatedAt,
+      cached: false, // Flag to indicate this was freshly generated
     });
   } catch (error) {
     console.error("Failed to generate insights:", error);
