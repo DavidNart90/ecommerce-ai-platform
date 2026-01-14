@@ -11,12 +11,35 @@ export const PRODUCT_COUNT_QUERY = defineQuery(`count(*[_type == "product"])`);
 export const ORDER_COUNT_QUERY = defineQuery(`count(*[_type == "order"])`);
 
 /**
+ * Get total customer count
+ */
+export const CUSTOMER_COUNT_QUERY = defineQuery(`count(*[_type == "customer"])`);
+
+/**
+ * Get low stock product count (stock <= 5)
+ */
+export const LOW_STOCK_COUNT_QUERY = defineQuery(`count(*[_type == "product" && stock <= 5])`);
+
+/**
  * Get total revenue from completed orders
  */
 export const TOTAL_REVENUE_QUERY = defineQuery(`math::sum(*[
   _type == "order"
   && status in ["paid", "shipped", "delivered"]
 ].total)`);
+
+/**
+ * Get revenue over time (grouped by day for the last 30 days)
+ */
+export const REVENUE_OVER_TIME_QUERY = defineQuery(`*[
+  _type == "order"
+  && status in ["paid", "shipped", "delivered"]
+  && createdAt >= $startDate
+  && !(_id in path("drafts.**"))
+] | order(createdAt asc) {
+  "date": createdAt,
+  total
+}`);
 
 // ============================================
 // AI Insights Analytics Queries

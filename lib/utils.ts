@@ -16,7 +16,14 @@ export function formatPrice(
   amount: number | null | undefined,
   currency = "£"
 ): string {
-  return `${currency}${(amount ?? 0).toFixed(2)}`;
+  if (amount === null || amount === undefined) {
+    return `${currency}0.00`;
+  }
+  
+  return `${currency}${amount.toLocaleString("en-GB", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 type DateFormatOption = "short" | "long" | "datetime";
