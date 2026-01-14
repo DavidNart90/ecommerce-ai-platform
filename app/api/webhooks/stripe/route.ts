@@ -148,7 +148,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     await productIds
       .reduce(
         (tx, productId, i) =>
-          tx.patch(productId, (p) => p.dec({ stock: quantities[i] })),
+          tx.patch(productId, (p: any) => p.dec({ stock: quantities[i] })),
         writeClient.transaction()
       )
       .commit();
