@@ -650,6 +650,29 @@ export type AI_SEARCH_PRODUCTS_QUERYResult = Array<{
   featured: boolean | null;
   assemblyRequired: boolean | null;
 }>;
+// Variable: RELATED_PRODUCTS_QUERY
+// Query: *[  _type == "product"  && $categorySlug != ""   && category->slug.current == $categorySlug  && slug.current != $slug] | order(_createdAt desc) [0...8] {  _id,  name,  "slug": slug.current,  price,  "images": images[0...3]{    _key,    asset->{      _id,      url    }  },  category->{    _id,    title,    "slug": slug.current  },  material,  color,  stock}
+export type RELATED_PRODUCTS_QUERYResult = Array<{
+  _id: string;
+  name: string | null;
+  slug: string | null;
+  price: number | null;
+  images: Array<{
+    _key: string;
+    asset: {
+      _id: string;
+      url: string | null;
+    } | null;
+  }> | null;
+  category: {
+    _id: string;
+    title: string | null;
+    slug: string | null;
+  } | null;
+  material: "fabric" | "glass" | "leather" | "metal" | "wood" | null;
+  color: "black" | "grey" | "natural" | "oak" | "walnut" | "white" | null;
+  stock: number | null;
+}>;
 
 // Source: ./sanity/queries/stats.ts
 // Variable: PRODUCT_COUNT_QUERY
@@ -658,9 +681,21 @@ export type PRODUCT_COUNT_QUERYResult = number;
 // Variable: ORDER_COUNT_QUERY
 // Query: count(*[_type == "order"])
 export type ORDER_COUNT_QUERYResult = number;
+// Variable: CUSTOMER_COUNT_QUERY
+// Query: count(*[_type == "customer"])
+export type CUSTOMER_COUNT_QUERYResult = number;
+// Variable: LOW_STOCK_COUNT_QUERY
+// Query: count(*[_type == "product" && stock <= 5])
+export type LOW_STOCK_COUNT_QUERYResult = number;
 // Variable: TOTAL_REVENUE_QUERY
 // Query: math::sum(*[  _type == "order"  && status in ["paid", "shipped", "delivered"]].total)
 export type TOTAL_REVENUE_QUERYResult = number;
+// Variable: REVENUE_OVER_TIME_QUERY
+// Query: *[  _type == "order"  && status in ["paid", "shipped", "delivered"]  && createdAt >= $startDate  && !(_id in path("drafts.**"))] | order(createdAt asc) {  "date": createdAt,  total}
+export type REVENUE_OVER_TIME_QUERYResult = Array<{
+  date: string | null;
+  total: number | null;
+}>;
 // Variable: ORDERS_LAST_7_DAYS_QUERY
 // Query: *[  _type == "order"  && createdAt >= $startDate  && !(_id in path("drafts.**"))] | order(createdAt desc) {  _id,  orderNumber,  total,  status,  createdAt,  "itemCount": count(items),  items[]{    quantity,    priceAtPurchase,    "productName": product->name,    "productId": product->_id  }}
 export type ORDERS_LAST_7_DAYS_QUERYResult = Array<{
@@ -746,9 +781,13 @@ declare module "@sanity/client" {
     "*[\n  _type == \"product\"\n  && stock > 0\n  && stock <= 5\n] | order(stock asc) {\n  _id,\n  name,\n  \"slug\": slug.current,\n  stock,\n  \"image\": images[0]{\n    asset->{\n      _id,\n      url\n    }\n  }\n}": LOW_STOCK_PRODUCTS_QUERYResult;
     "*[\n  _type == \"product\"\n  && stock == 0\n] | order(name asc) {\n  _id,\n  name,\n  \"slug\": slug.current,\n  \"image\": images[0]{\n    asset->{\n      _id,\n      url\n    }\n  }\n}": OUT_OF_STOCK_PRODUCTS_QUERYResult;
     "*[\n  _type == \"product\"\n  && (\n    $searchQuery == \"\"\n    || name match $searchQuery + \"*\"\n    || description match $searchQuery + \"*\"\n    || category->title match $searchQuery + \"*\"\n  )\n  && ($categorySlug == \"\" || category->slug.current == $categorySlug)\n  && ($material == \"\" || material == $material)\n  && ($color == \"\" || color == $color)\n  && ($minPrice == 0 || price >= $minPrice)\n  && ($maxPrice == 0 || price <= $maxPrice)\n] | order(name asc) [0...20] {\n  _id,\n  name,\n  \"slug\": slug.current,\n  description,\n  price,\n  \"image\": images[0]{\n    asset->{\n      _id,\n      url\n    }\n  },\n  category->{\n    _id,\n    title,\n    \"slug\": slug.current\n  },\n  material,\n  color,\n  dimensions,\n  stock,\n  featured,\n  assemblyRequired\n}": AI_SEARCH_PRODUCTS_QUERYResult;
+    "*[\n  _type == \"product\"\n  && $categorySlug != \"\" \n  && category->slug.current == $categorySlug\n  && slug.current != $slug\n] | order(_createdAt desc) [0...8] {\n  _id,\n  name,\n  \"slug\": slug.current,\n  price,\n  \"images\": images[0...3]{\n    _key,\n    asset->{\n      _id,\n      url\n    }\n  },\n  category->{\n    _id,\n    title,\n    \"slug\": slug.current\n  },\n  material,\n  color,\n  stock\n}": RELATED_PRODUCTS_QUERYResult;
     "count(*[_type == \"product\"])": PRODUCT_COUNT_QUERYResult;
     "count(*[_type == \"order\"])": ORDER_COUNT_QUERYResult;
+    "count(*[_type == \"customer\"])": CUSTOMER_COUNT_QUERYResult;
+    "count(*[_type == \"product\" && stock <= 5])": LOW_STOCK_COUNT_QUERYResult;
     "math::sum(*[\n  _type == \"order\"\n  && status in [\"paid\", \"shipped\", \"delivered\"]\n].total)": TOTAL_REVENUE_QUERYResult;
+    "*[\n  _type == \"order\"\n  && status in [\"paid\", \"shipped\", \"delivered\"]\n  && createdAt >= $startDate\n  && !(_id in path(\"drafts.**\"))\n] | order(createdAt asc) {\n  \"date\": createdAt,\n  total\n}": REVENUE_OVER_TIME_QUERYResult;
     "*[\n  _type == \"order\"\n  && createdAt >= $startDate\n  && !(_id in path(\"drafts.**\"))\n] | order(createdAt desc) {\n  _id,\n  orderNumber,\n  total,\n  status,\n  createdAt,\n  \"itemCount\": count(items),\n  items[]{\n    quantity,\n    priceAtPurchase,\n    \"productName\": product->name,\n    \"productId\": product->_id\n  }\n}": ORDERS_LAST_7_DAYS_QUERYResult;
     "{\n  \"paid\": count(*[_type == \"order\" && status == \"paid\" && !(_id in path(\"drafts.**\"))]),\n  \"shipped\": count(*[_type == \"order\" && status == \"shipped\" && !(_id in path(\"drafts.**\"))]),\n  \"delivered\": count(*[_type == \"order\" && status == \"delivered\" && !(_id in path(\"drafts.**\"))]),\n  \"cancelled\": count(*[_type == \"order\" && status == \"cancelled\" && !(_id in path(\"drafts.**\"))])\n}": ORDER_STATUS_DISTRIBUTION_QUERYResult;
     "*[\n  _type == \"order\"\n  && status in [\"paid\", \"shipped\", \"delivered\"]\n  && !(_id in path(\"drafts.**\"))\n] {\n  items[]{\n    \"productId\": product->_id,\n    \"productName\": product->name,\n    \"productPrice\": product->price,\n    quantity\n  }\n}.items[]": TOP_SELLING_PRODUCTS_QUERYResult;

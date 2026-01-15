@@ -52,7 +52,12 @@ export function RevenueChart() {
           startDate: thirtyDaysAgo.toISOString(),
         });
 
-        setRawData(data);
+        const validData = (data || []).map((item) => ({
+          date: item.date ?? "",
+          total: item.total ?? 0,
+        }));
+
+        setRawData(validData);
         setError(null);
       } catch (err) {
         console.error("Error fetching revenue data:", err);
@@ -73,7 +78,7 @@ export function RevenueChart() {
 
     rawData.forEach((item) => {
       if (!item.date || item.total === null) return;
-      
+
       const date = new Date(item.date).toLocaleDateString("en-GB", {
         month: "short",
         day: "numeric",

@@ -59,7 +59,7 @@ export function AddToCartButton({
   // Not in cart - show Add to Basket button
   if (quantityInCart === 0) {
     return (
-      <Button onClick={handleAdd} className={cn("h-11 w-full", className)}>
+      <Button onClick={handleAdd} className={cn("h-10 w-full rounded-full transition-transform active:scale-95", className)}>
         <ShoppingBag className="mr-2 h-4 w-4" />
         Add to Basket
       </Button>
