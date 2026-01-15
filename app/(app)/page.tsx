@@ -2,10 +2,11 @@ import { FeaturedCarousel } from "@/components/LandingPage/FeaturedCarousel";
 import { CategoryTiles } from "@/components/LandingPage/CategoryTiles";
 import { sanityFetch } from "@/sanity/lib/live";
 import { ALL_CATEGORIES_QUERY } from "@/sanity/queries/categories";
-import { FILTER_PRODUCTS_BY_NAME_QUERY, 
+import {
+  FILTER_PRODUCTS_BY_NAME_QUERY,
   FILTER_PRODUCTS_BY_RELEVANCE_QUERY,
   FILTER_PRODUCTS_BY_PRICE_ASC_QUERY,
-  FILTER_PRODUCTS_BY_PRICE_DESC_QUERY ,
+  FILTER_PRODUCTS_BY_PRICE_DESC_QUERY,
   FEATURED_PRODUCTS_QUERY
 } from "@/sanity/queries/products";
 import { Suspense } from "react";
@@ -25,19 +26,19 @@ interface PageProps {
   }>;
 }
 
-export default async function Home({searchParams }: PageProps){
+export default async function Home({ searchParams }: PageProps) {
   const params = await searchParams;
 
-  const searchQuery = params.q ??"";
-  const categorySlug = params.category?? "";
-  const color = params.color??"";
-  const material = params.material??"";
+  const searchQuery = params.q ?? "";
+  const categorySlug = params.category ?? "";
+  const color = params.color ?? "";
+  const material = params.material ?? "";
   const minPrice = Number(params.minPrice) || 0;
   const maxPrice = Number(params.maxPrice) || 0;
-  const sort = params.sort?? "name";
+  const sort = params.sort ?? "name";
   const inStock = params.inStock === "true";
   //Select query based on search params
-  
+
   const getQuery = () => {
     //if searching and sort is relevance, use relevance query
     if (searchQuery && sort == "relevance") {
@@ -56,40 +57,40 @@ export default async function Home({searchParams }: PageProps){
     }
   };
 
- //Fetch products with filters (server-side via GROQ)
- const {data: products} = await sanityFetch({
-  query: getQuery() as string,
-  params: {
-    searchQuery,
-    categorySlug,
-    color,
-    material,
-    minPrice,
-    maxPrice,
-    inStock,
-  }
- });
+  //Fetch products with filters (server-side via GROQ)
+  const { data: products } = await sanityFetch({
+    query: getQuery() as string,
+    params: {
+      searchQuery,
+      categorySlug,
+      color,
+      material,
+      minPrice,
+      maxPrice,
+      inStock,
+    }
+  });
 
   // Fetch Categories for filter sidebar
-  const {data: categories } = await sanityFetch({
+  const { data: categories } = await sanityFetch({
     query: ALL_CATEGORIES_QUERY
   });
 
-  const {data: featuredProducts } = await sanityFetch({
+  const { data: featuredProducts } = await sanityFetch({
     query: FEATURED_PRODUCTS_QUERY
   });
-  
+
 
   return (
     <div className="">
       {/* Featured Products Carousel */}
       <Suspense fallback={<FeaturedCarouselSkeleton />}>
-      <FeaturedCarousel products={featuredProducts} />
+        <FeaturedCarousel products={featuredProducts} />
       </Suspense>
 
       {/* Page Banner */}
-            <div className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-        <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
+      <div className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="mx-auto max-w-7xl px-2 pt-8">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
             Shop {categorySlug ? categorySlug : "All Products"}
           </h1>
@@ -108,8 +109,8 @@ export default async function Home({searchParams }: PageProps){
       </div>
 
       {/* Product Section */}
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <ProductSection 
+      <div className="mx-auto max-w-7xl px-2 py-8">
+        <ProductSection
           categories={categories}
           products={products}
           searchQuery={searchQuery}

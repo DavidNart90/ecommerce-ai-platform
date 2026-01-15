@@ -112,7 +112,7 @@ function FeaturedSlide({ product }: FeaturedSlideProps) {
   const mainImage = product.images?.[0]?.asset?.url;
 
   return (
-    <div className="flex min-h-[400px] flex-col md:min-h-[450px] md:flex-row lg:min-h-[500px]">
+    <div className="flex min-h-[400px] flex-col md:min-h-[450px] md:flex-row lg:min-h-[70vh]">
       {/* Image Section - Left side (60% on desktop) */}
       <div className="relative h-64 w-full md:h-auto md:w-3/5">
         {mainImage ? (

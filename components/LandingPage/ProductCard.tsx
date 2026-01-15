@@ -20,13 +20,14 @@ export function ProductCard({ product }: ProductCardProps) {
   const [hoveredImageIndex, setHoveredImageIndex] = useState<number | null>(
     null,
   );
+  const [selectedImageIndex, setSelectedImageIndex] = useState<number>(0);
 
   const images = product.images ?? [];
   const mainImageUrl = images[0]?.asset?.url;
   const displayedImageUrl =
     hoveredImageIndex !== null
       ? images[hoveredImageIndex]?.asset?.url
-      : mainImageUrl;
+      : images[selectedImageIndex]?.asset?.url ?? mainImageUrl;
 
   const stock = product.stock ?? 0;
   const isOutOfStock = stock <= 0;
@@ -34,13 +35,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-sm ring-1 ring-zinc-950/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-zinc-950/10 dark:bg-zinc-900 dark:ring-white/10 dark:hover:shadow-zinc-950/50">
-      <Link href={`/products/${product.slug}`} className="block">
-        <div
-          className={cn(
-            "relative overflow-hidden bg-linear-to-br from-zinc-100 to-zinc-50 dark:from-zinc-800 dark:to-zinc-900",
-            hasMultipleImages ? "aspect-square" : "aspect-4/5",
-          )}
-        >
+      <div
+        className={cn(
+          "relative group overflow-hidden bg-zinc-100 dark:bg-zinc-800",
+          "aspect-[4/3]",
+        )}
+      >
+        <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0 block">
           {displayedImageUrl ? (
             <Image
               src={displayedImageUrl}
@@ -82,60 +83,68 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.category.title}
             </span>
           )}
-        </div>
-      </Link>
+        </Link>
 
-      {/* Thumbnail strip - only show if multiple images */}
-      {hasMultipleImages && (
-        <div className="flex gap-2 border-t border-zinc-100 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-800/50">
-          {images.map((image, index) => (
-            <button
-              key={image._key ?? index}
-              type="button"
-              className={cn(
-                "relative h-14 flex-1 overflow-hidden rounded-lg transition-all duration-200",
-                hoveredImageIndex === index
-                  ? "ring-2 ring-zinc-900 ring-offset-2 dark:ring-white dark:ring-offset-zinc-900"
-                  : "opacity-50 hover:opacity-100",
-              )}
-              onMouseEnter={() => setHoveredImageIndex(index)}
-              onMouseLeave={() => setHoveredImageIndex(null)}
-            >
-              {image.asset?.url && (
-                <Image
-                  src={image.asset.url}
-                  alt={`${product.name} - view ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="100px"
-                />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
+        {/* Thumbnail strip - absolute overlay */}
+        {hasMultipleImages && (
+          <div className="absolute bottom-2 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 rounded-full bg-white/30 p-1.5 backdrop-blur-md transition-opacity duration-300 group-hover:bg-white/50 dark:bg-black/30 dark:group-hover:bg-black/50">
+            {images.map((image, index) => {
+              const isSelected =
+                hoveredImageIndex === index ||
+                (hoveredImageIndex === null && selectedImageIndex === index);
+              return (
+                <button
+                  key={image._key ?? index}
+                  type="button"
+                  className={cn(
+                    "relative h-8 w-8 overflow-hidden rounded-full transition-all duration-200",
+                    isSelected
+                      ? "ring-2 ring-zinc-900 ring-offset-1 dark:ring-white dark:ring-offset-zinc-900 scale-110 opacity-100"
+                      : "opacity-70 hover:opacity-100 hover:scale-105",
+                  )}
+                  onMouseEnter={() => setHoveredImageIndex(index)}
+                  onMouseLeave={() => setHoveredImageIndex(null)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedImageIndex(index);
+                  }}
+                >
+                  {image.asset?.url && (
+                    <Image
+                      src={image.asset.url}
+                      alt={`${product.name} - view ${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="32px"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
-      <CardContent className="flex grow flex-col justify-between gap-2 p-5">
+      <CardContent className="flex grow flex-col justify-between gap-2 p-4">
         <Link href={`/products/${product.slug}`} className="block">
-          <h3 className="line-clamp-2 text-base font-semibold leading-tight text-zinc-900 transition-colors group-hover:text-zinc-600 dark:text-zinc-100 dark:group-hover:text-zinc-300">
+          <h3 className="line-clamp-1 text-base font-medium text-zinc-900 transition-colors group-hover:text-amber-600 dark:text-zinc-100 dark:group-hover:text-amber-400">
             {product.name}
           </h3>
         </Link>
-        <div className="flex items-baseline justify-between gap-2">
-          <p className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
-            {formatPrice(product.price)}
-          </p>
-          <StockBadge productId={product._id} stock={stock} />
-        </div>
+        <p className="text-lg font-bold text-zinc-900 dark:text-white">
+          {formatPrice(product.price)}
+        </p>
       </CardContent>
 
-      <CardFooter className="mt-auto p-5 pt-0">
+      <CardFooter className="mt-auto p-4 pt-0">
         <AddToCartButton
           productId={product._id}
           name={product.name ?? "Unknown Product"}
           price={product.price ?? 0}
           image={mainImageUrl ?? undefined}
           stock={stock}
+          className="rounded-full"
         />
       </CardFooter>
     </Card>

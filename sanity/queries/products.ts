@@ -355,3 +355,34 @@ export const AI_SEARCH_PRODUCTS_QUERY = defineQuery(`*[
   featured,
   assemblyRequired
 }`);
+
+/**
+ * Get related products (same category)
+ * Excludes current product
+ */
+export const RELATED_PRODUCTS_QUERY = defineQuery(`*[
+  _type == "product"
+  && $categorySlug != "" 
+  && category->slug.current == $categorySlug
+  && slug.current != $slug
+] | order(_createdAt desc) [0...8] {
+  _id,
+  name,
+  "slug": slug.current,
+  price,
+  "images": images[0...3]{
+    _key,
+    asset->{
+      _id,
+      url
+    }
+  },
+  category->{
+    _id,
+    title,
+    "slug": slug.current
+  },
+  material,
+  color,
+  stock
+}`);

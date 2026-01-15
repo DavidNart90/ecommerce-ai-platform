@@ -1,8 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { PanelLeftClose, PanelLeft } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { ProductFilters } from "@/components/LandingPage/ProductFilters";
 import { ProductGrid } from "@/components/LandingPage/ProductGrid";
 import type {
@@ -22,6 +29,14 @@ export function ProductSection({
   searchQuery,
 }: ProductSectionProps) {
   const [filtersOpen, setFiltersOpen] = useState(true);
+  const [visibleCount, setVisibleCount] = useState(9);
+
+  const displayedProducts = products.slice(0, visibleCount);
+  const hasMore = visibleCount < products.length;
+
+  const showMore = () => {
+    setVisibleCount((prev) => Math.min(prev + 12, products.length));
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -39,11 +54,12 @@ export function ProductSection({
         </p>
 
         {/* Filter toggle button */}
+        {/* Filter toggle button - Desktop */}
         <Button
           variant="outline"
           size="sm"
           onClick={() => setFiltersOpen(!filtersOpen)}
-          className="flex items-center gap-2 border-zinc-300 bg-white shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+          className="hidden items-center gap-2 border-zinc-300 bg-white shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 lg:flex"
           aria-label={filtersOpen ? "Hide filters" : "Show filters"}
         >
           {filtersOpen ? (
@@ -60,22 +76,57 @@ export function ProductSection({
             </>
           )}
         </Button>
+
+        {/* Filter toggle button - Mobile */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 border-zinc-300 bg-white shadow-sm transition-all hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800 lg:hidden"
+              aria-label="Show filters"
+            >
+              <span className="text-sm font-medium">Filters</span>
+              <Menu className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-[300px] overflow-y-auto sm:w-[400px]">
+            <SheetHeader>
+              <SheetTitle className="text-left">Filters</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <ProductFilters categories={categories} />
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
 
       {/* Main content area */}
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Sidebar Filters - completely hidden when collapsed on desktop */}
+        {/* Sidebar Filters - Desktop only */}
         <aside
-          className={`shrink-0 transition-all duration-300 ease-in-out ${
-            filtersOpen ? "w-full lg:w-72 lg:opacity-100" : "hidden lg:hidden"
-          }`}
+          className={`hidden shrink-0 transition-all duration-300 ease-in-out lg:block ${filtersOpen ? "w-72 opacity-100" : "w-0 overflow-hidden opacity-0"
+            }`}
         >
           <ProductFilters categories={categories} />
         </aside>
 
         {/* Product Grid - expands to full width when filters hidden */}
         <main className="flex-1 transition-all duration-300">
-          <ProductGrid products={products} />
+          <ProductGrid products={displayedProducts} />
+
+          {hasMore && (
+            <div className="mt-12 flex justify-center">
+              <Button
+                size="lg"
+                onClick={showMore}
+                className="min-w-[200px] bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              >
+                Show More Products
+              </Button>
+            </div>
+          )}
         </main>
       </div>
     </div>

@@ -8,27 +8,31 @@ import { Header } from "@/components/Header";
 import { CartSheetClient } from "@/components/CartSheetClient";
 import { SanitySdkProvider } from "@/lib/providers/sanity-sdk-provider";
 import { ChatSheet } from "@/components/ChatSheet";
-import { AppShell } from "@/components/AppShell";
 
-export default function Layout({children}: {children: ReactNode}){
+import { AppShell } from "@/components/AppShell";
+import { Footer } from "@/components/layout/Footer";
+
+export default function Layout({ children }: { children: ReactNode }) {
     return (
-    <ClerkProvider>
-        <SanitySdkProvider>
-            <CartStoreProvider>
-                <ChatStoreProvider>
-                    <AppShell>
-                        <Header />
-                        <main>
-                            {children}
-                        </main>
-                    </AppShell>
-                    <CartSheetClient />
-                    <ChatSheet />
-                    <SanityLive />
-                    <Toaster position = "bottom-center" />
-                </ChatStoreProvider>
-            </CartStoreProvider>
-        </SanitySdkProvider>
-    </ClerkProvider>
+        <ClerkProvider>
+            <SanitySdkProvider>
+                <CartStoreProvider>
+                    <ChatStoreProvider>
+                        <AppShell>
+                            <Header />
+                            <main>
+                                {children}
+
+                            </main>
+                            <Footer />
+                        </AppShell>
+                        <CartSheetClient />
+                        <ChatSheet />
+                        <SanityLive />
+                        <Toaster position="bottom-center" />
+                    </ChatStoreProvider>
+                </CartStoreProvider>
+            </SanitySdkProvider>
+        </ClerkProvider>
     );
 }
