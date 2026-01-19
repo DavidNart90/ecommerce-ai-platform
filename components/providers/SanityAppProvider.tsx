@@ -1,9 +1,17 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { SanityApp } from "@sanity/sdk-react";
 import { dataset, projectId } from "@/sanity/env";
 
 function SanityAppProvider({ children }: { children: React.ReactNode }) {
+  const [callbackUrl, setCallbackUrl] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    // Set callback URL only on client side to avoid hydration mismatch
+    setCallbackUrl(`${window.location.origin}/admin`);
+  }, []);
+
   return (
     <SanityApp
       config={[
@@ -11,10 +19,7 @@ function SanityAppProvider({ children }: { children: React.ReactNode }) {
           projectId,
           dataset,
           auth: {
-            callbackUrl:
-              typeof window !== "undefined"
-                ? `${window.location.origin}/admin`
-                : undefined,
+            callbackUrl,
           },
         },
       ]}
