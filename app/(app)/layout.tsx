@@ -28,8 +28,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                         </AppShell>
                         <CartSheetClient />
                         <ChatSheet />
-                        <SanityLive />
                         <Toaster position="bottom-center" />
+                        <SanityLive />
                     </ChatStoreProvider>
                 </CartStoreProvider>
             </SanitySdkProvider>

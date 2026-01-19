@@ -142,7 +142,7 @@ export function Header() {
       {/* Mobile Floating Ask AI Button - Fixed position, visible only on mobile when chat is closed */}
       {
         !isChatOpen && (
-          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-2 lg:hidden">
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col items-center gap-2">
             <span className="animate-bounce rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-600 shadow-lg shadow-amber-500/20 dark:bg-zinc-800 dark:text-amber-400">
               Ask AI
             </span>

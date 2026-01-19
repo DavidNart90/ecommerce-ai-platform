@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, ShoppingBag, AlertTriangle, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ShoppingBag,
+  AlertTriangle,
+  Loader2,
+  Truck,
+  MapPin,
+  Shield,
+  Clock,
+  Info,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CheckoutButton } from "@/components/CheckoutButton";
 import { formatPrice } from "@/lib/utils";
@@ -95,9 +105,8 @@ export function CheckoutClient() {
                 return (
                   <div
                     key={item.productId}
-                    className={`flex gap-4 px-6 py-4 ${
-                      hasIssue ? "bg-red-50 dark:bg-red-950/20" : ""
-                    }`}
+                    className={`flex gap-4 px-6 py-4 ${hasIssue ? "bg-red-50 dark:bg-red-950/20" : ""
+                      }`}
                   >
                     {/* Image */}
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-zinc-100 dark:bg-zinc-800">
@@ -154,6 +163,73 @@ export function CheckoutClient() {
               })}
             </div>
           </div>
+
+          {/* Delivery Information */}
+          <div className="mt-6 rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+              <h2 className="font-semibold text-zinc-900 dark:text-zinc-100">
+                Delivery Information
+              </h2>
+            </div>
+            <div className="space-y-4 p-6">
+              {/* Shipping Address Notice */}
+              <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/50">
+                <Info className="h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
+                <div className="text-sm">
+                  <p className="font-medium text-blue-900 dark:text-blue-100">
+                    Shipping Address Required
+                  </p>
+                  <p className="mt-1 text-blue-700 dark:text-blue-300">
+                    You'll be asked to provide your shipping address on the
+                    secure Stripe checkout page. Please ensure all details are
+                    accurate for successful delivery.
+                  </p>
+                </div>
+              </div>
+
+              {/* Delivery Timeline */}
+              <div className="flex items-start gap-3">
+                <Clock className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                <div className="text-sm">
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Estimated Delivery
+                  </p>
+                  <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                    2-5 business days for standard shipping
+                  </p>
+                </div>
+              </div>
+
+              {/* Shipping Method */}
+              <div className="flex items-start gap-3">
+                <Truck className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                <div className="text-sm">
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    How We Ship
+                  </p>
+                  <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                    All orders are carefully packaged and shipped via trusted
+                    carriers. You'll receive tracking information once your
+                    order ships.
+                  </p>
+                </div>
+              </div>
+
+              {/* Coverage Area */}
+              <div className="flex items-start gap-3">
+                <MapPin className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                <div className="text-sm">
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                    Delivery Coverage
+                  </p>
+                  <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                    We deliver nationwide. Shipping costs will be calculated
+                    based on your location during checkout.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Order Total & Checkout */}
@@ -196,9 +272,42 @@ export function CheckoutClient() {
               <CheckoutButton disabled={hasStockIssues || isLoading} />
             </div>
 
-            <p className="mt-4 text-center text-xs text-zinc-500 dark:text-zinc-400">
-              You&apos;ll be redirected to Stripe&apos;s secure checkout
-            </p>
+            {/* Security & Trust Indicators */}
+            <div className="mt-6 space-y-3">
+              <div className="flex items-center justify-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <Shield className="h-4 w-4" />
+                <span>Secure checkout powered by Stripe</span>
+              </div>
+
+              <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
+                Your payment information is encrypted and secure. We never store
+                your card details.
+              </p>
+
+              <div className="flex items-center justify-center gap-4 pt-2">
+                <div className="flex items-center gap-1 text-xs text-zinc-400">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z" />
+                  </svg>
+                  <span>SSL Encrypted</span>
+                </div>
+                <div className="h-3 w-px bg-zinc-300 dark:bg-zinc-700" />
+                <div className="flex items-center gap-1 text-xs text-zinc-400">
+                  <svg
+                    className="h-4 w-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                  </svg>
+                  <span>PCI Compliant</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
