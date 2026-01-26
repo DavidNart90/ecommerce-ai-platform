@@ -381,6 +381,7 @@ Guidelines:
 - Use £ for currency
 - IMPORTANT: When mentioning orders that need to be processed or shipped, ALWAYS include the order number, ALL ORDERS THAT NEEDS TO BE PROCESSED OR SHIPPED SHOULD BE LISTED IN THE URGENT ACTION ITEMS SECTION.
 - List specific order numbers in urgent action items so the admin can take immediate action
+- IF ALL ORDERS ARE FULFILLED, LIST "ALL ORDERS ARE FULFILLED" IN THE URGENT ACTION ITEMS SECTION. WITH THE TOTAL NUMBER OF ORDERS THAT ARE FULFILLED with a green checkmark icon and no other urgent action items.
 - INVENTORY ALERTS: In the inventory.alerts array:
   1. FIRST list ALL out-of-stock products (stock = 0) as URGENT with product name (e.g., "OUT OF STOCK: Modern Coffee Table")
   2. THEN list up to 4 low-stock products (stock 1-5) as warnings with product name and stock count (e.g., "Low stock: Velvet Sofa (2 left)")`,

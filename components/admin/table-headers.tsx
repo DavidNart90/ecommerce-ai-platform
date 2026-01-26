@@ -58,3 +58,31 @@ export function ProductTableHeader() {
     </TableHeader>
   );
 }
+
+// ============================================
+// Customer Table Headers
+// ============================================
+
+const CUSTOMER_TABLE_COLUMNS: TableHeaderColumn[] = [
+  { label: "Customer" },
+  { label: "Email", className: "hidden sm:table-cell" },
+  { label: "Orders", className: "hidden text-center md:table-cell" },
+  { label: "Total Spent", className: "hidden sm:table-cell" },
+  { label: "Status", className: "text-center sm:text-left" },
+  { label: "Last Order", className: "hidden md:table-cell" },
+  { label: "Member Since", className: "hidden lg:table-cell" },
+];
+
+export function CustomerTableHeader() {
+  return (
+    <TableHeader>
+      <TableRow>
+        {CUSTOMER_TABLE_COLUMNS.map((column) => (
+          <TableHead key={column.label} className={column.className}>
+            {column.label}
+          </TableHead>
+        ))}
+      </TableRow>
+    </TableHeader>
+  );
+}
